@@ -1,0 +1,167 @@
+{
+  "protocol_id": "A24-PROPOSED-20261008-v1",
+  "status": "PROPOSED_NOT_EXECUTED",
+  "scope": "Theory package; real Maxwell and network experiments are not run",
+  "actual_executed_program": "verification/algebra_checks.py",
+  "training_enabled": false,
+  "gpu_enabled": false,
+  "requires_freeze_before_results": true,
+  "implementation_details_must_be_finalized_before_execution": [
+    "domain coordinates, source/receiver positions, exact ring and parent masks",
+    "backend self-term, constitutive map, units and real-data packing",
+    "TV lambda, step-size rule, split seeds and exact failure ledger schema",
+    "source/receiver/background dependency keys and code commit hashes"
+  ],
+  "stage_order": [
+    "A0_algebra",
+    "A1_real_operator_anatomy",
+    "B0_no_NN_L_F_R",
+    "optional_tiny_3D_confirmation",
+    "C_D_only_after_separate_approval"
+  ],
+  "budgets": {
+    "A1_cpu_wall_seconds": 120,
+    "B0_cpu_wall_seconds": 1800,
+    "B0_new_clean_states_max": 16,
+    "optional_3D_cpu_wall_seconds": 600,
+    "optional_3D_states_max": 4,
+    "gpu_seconds": 0
+  },
+  "B0": {
+    "physics": "2D TM, full-grid material",
+    "grid": [
+      24,
+      24
+    ],
+    "sources": 8,
+    "receivers": 32,
+    "reference_types": [
+      "weak homogeneous chi=0.1+0.04i",
+      "known ring chi=2+0.1i; exterior 0.1+0.04i"
+    ],
+    "independent_parents": 4,
+    "families": {
+      "multiscale_shell": 2,
+      "asymmetric_piecewise": 2
+    },
+    "relative_amplitude_max_abs_delta_chi": [
+      0.3,
+      1.2
+    ],
+    "clean_states": 16,
+    "noise_snr_db": [
+      null,
+      20
+    ],
+    "null_snr_means": "noiseless",
+    "noise_reference": "per-state differential data RMS; identical noise realization across arms",
+    "observation_conditions": 32,
+    "primary_blocks": 3,
+    "diagnostic_blocks": 6,
+    "primary_prior": "shared full-grid TV",
+    "initialization": "one common constrained dressed-linear or BP image; choose and freeze before outputs",
+    "max_half_step_retry": 1,
+    "arms": {
+      "L": "exact local a(chi) conversion, no relative propagation feedback",
+      "F": "exact relative forward/adjoint at algorithm candidate chi; no truth-state inputs",
+      "R": "full material source, approximate internal return D+U V*"
+    },
+    "primary_return": {
+      "D": "zero",
+      "rank": 16
+    },
+    "diagnostic_return_options": {
+      "rank": 32,
+      "D": "nonoverlapping 2x2-cell local blocks"
+    },
+    "primary_must_not_be_reselected_on_test_results": true
+  },
+  "A1": {
+    "same_U_anchor_identity_pair": true,
+    "receiver_retained_rank": 8,
+    "affine_source_offset_in_design_pair": true,
+    "observable_rank": 16,
+    "target_current_rank": 32,
+    "rank_deflation_must_be_reported": true,
+    "negative_control": "delete P without anchor",
+    "confound_control": "replace receiver retained directions with source currents"
+  },
+  "gates": {
+    "G1": {
+      "identity_relative_tolerance": 1e-10,
+      "P_scale": "full forcing norm, not tiny P own norm",
+      "same_U_other_seeds_required": true
+    },
+    "G2": {
+      "independent_forward_transfer_relative_error_max": 0.05,
+      "independent_adjoint_relative_error_max": 0.05,
+      "nondegenerate_gradient_cosine_min": 0.99,
+      "material_NRMSE_relative_degradation_vs_F_max": 0.05
+    },
+    "G3": {
+      "F_vs_L_material_NRMSE_relative_improvement_min": 0.1,
+      "minimum_support": "one parent in each of the two shape families; report all parents",
+      "R_fraction_of_paired_F_gain_min": 0.8,
+      "closure_error_over_resolvable_feedback_max": 0.5,
+      "full_physics_and_noise_budget_required": true
+    },
+    "G4": {
+      "matched_capacity_material_NRMSE_improvement_min": 0.1,
+      "alternative_training_parent_reduction_fraction": 0.5,
+      "OOD_non_degradation_required": true,
+      "status": "NOT_RUN_TRAINING_DISABLED"
+    },
+    "G5": {
+      "matched_quality_warm_or_declared_amortized_time_reduction_min": 0.2,
+      "report_reuse_counts": [
+        1,
+        10,
+        100
+      ],
+      "include_cold_setup": true
+    }
+  },
+  "quality_region": {
+    "full_chi_NRMSE_max": 0.35,
+    "delta_chi_NRMSE_max": 0.6,
+    "material_feasible": true,
+    "constitutive_pole_free": true,
+    "noisy_whitened_full_data_residual_max": "1.2*sqrt(m_real)",
+    "noiseless_relative_full_data_residual_max": 0.05,
+    "if_unreached": "QUALITY_TARGET_NOT_REACHED"
+  },
+  "numerical_guards": {
+    "dtype": "complex128/float64",
+    "normalized_feasibility_tolerance": 1e-10,
+    "core_relative_sigma_min_floor": 1e-10,
+    "core_condition_cap": 10000000000.0,
+    "report_absolute_sigma_min": true,
+    "pole_guard": "relative constitutive denominator scale",
+    "no_hidden_ridge_or_pseudoinverse": true
+  },
+  "deferred_learning": {
+    "enabled": false,
+    "training_parent_counts": [
+      64,
+      128,
+      256
+    ],
+    "validation_parents": 32,
+    "test_parents": 32,
+    "training_seeds": 2,
+    "parameter_count_relative_tolerance": 0.01,
+    "main_depth": 3,
+    "original_SOMNet_depth_control": 4,
+    "few_layer_test_depth": 2,
+    "max_training_steps": "not authorized; must be frozen after a future hardware microbenchmark"
+  },
+  "evidence_rules": {
+    "synthetic_algebra_is_not_Maxwell_evidence": true,
+    "four_parents_are_not_32_independent_scenes": true,
+    "2D_is_not_3D_evidence": true,
+    "prior_supported_and_measurement_supported_inference_separate": true,
+    "failed_and_unrun_cases_retained": true,
+    "truth_for_offline_evaluator_only": true,
+    "thresholds_are_engineering_choices_not_theorems": true
+  }
+}

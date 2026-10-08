@@ -1,0 +1,13 @@
+{
+  "required_markdown_documents": 14,
+  "all_required_present": true,
+  "markdown_math_and_fences_balanced": true,
+  "internal_links_checked": true,
+  "python_syntax_checked": true,
+  "json_syntax_checked": true,
+  "algebra_tests": "ALL_ASSERTIONS_PASSED",
+  "real_Maxwell_experiments_run": false,
+  "training_run": false,
+  "gpu_used": false,
+  "limitations": "Original TSOM/FFT-TSOM article full texts and several nearest-prior full texts unavailable. Details in reading ledger."
+}

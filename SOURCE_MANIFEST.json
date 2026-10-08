@@ -1,0 +1,8 @@
+{
+  "A23_commit": "a47cda424dfb55792e69d952a25f54ce9a2a5613",
+  "A20_backend_commit": "b85a29a51f4ea7b4d93617e827d88e23933b89df",
+  "two_dimensional_source": "Gaussian/code/a2/physics.py; unchanged snapshot; original directory not a Git repository",
+  "sha256_checks_performed": false,
+  "theory_originals_unchanged": true,
+  "scope": "2D TM primary; frozen 3D dyadic DDA only for conditional confirmation"
+}
