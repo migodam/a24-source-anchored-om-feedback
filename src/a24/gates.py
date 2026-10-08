@@ -46,6 +46,16 @@ def decide(config,out,anatomy_path=None):
                       'R_gain_retention':retention,
                       'R_relative_degradation_vs_F':rv/fv-1 if fv and rv is not None else None})
     primary_tasks=[t for t in tasks if t.get('method')=='R16']
+    counterexamples=[]
+    for t in primary_tasks:
+        if t.get('status')!='OK': continue
+        transfer=number(t,'independent_transfer_error');adjoint=number(t,'independent_adjoint_error')
+        cosine=number(t,'gradient_cosine')
+        if ((transfer is not None and transfer>g['G2_task_error_max'])
+            or (adjoint is not None and adjoint>g['G2_task_error_max'])
+            or (cosine is not None and cosine<g['G2_gradient_cosine_min'])):
+            counterexamples.append({'case_id':t['case_id'],'transfer_error':transfer,
+                                    'adjoint_error':adjoint,'gradient_cosine':cosine})
     task_complete=len(primary_tasks)==32 and all(t['status']=='OK' for t in primary_tasks)
     task_pass=task_complete and all(number(t,'independent_transfer_error') is not None
         and number(t,'independent_transfer_error')<=g['G2_task_error_max']
@@ -54,11 +64,15 @@ def decide(config,out,anatomy_path=None):
         and number(t,'gradient_cosine') is not None
         and number(t,'gradient_cosine')>=g['G2_gradient_cosine_min'] for t in primary_tasks)
     image_pass=complete and all(t['R_relative_degradation_vs_F']<=g['G2_image_degradation_max'] for t in gains)
-    G2={'status':'PASS' if task_pass and image_pass else 'FAIL' if task_complete and complete else 'HOLD',
+    G2={'status':'FAIL' if counterexamples else 'PASS' if task_pass and image_pass
+        else 'FAIL' if task_complete and complete else 'HOLD',
         'thresholds':{'task_max':g['G2_task_error_max'],'cosine_min':g['G2_gradient_cosine_min'],
                       'image_degradation_max':g['G2_image_degradation_max']},
         'independent_task_rows':len(primary_tasks),'expected_task_rows':32,
         'tasks_pass':task_pass,'image_pass':image_pass,
+        'observed_task_counterexamples':counterexamples,
+        'coverage_complete':bool(task_complete and complete),
+        'missing_conditions_cannot_erase_observed_counterexample':True,
         'interpretation':'Independent task tests at same online R estimate; no truth-state Jacobian.'}
     pairs={}
     for row in rows: pairs.setdefault(row['case_id'],{})[row['method']]=row
