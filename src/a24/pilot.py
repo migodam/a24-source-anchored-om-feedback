@@ -132,7 +132,8 @@ def task_audit(model,exact,chi,obs,config,book):
             'independent_state_data_error':relative_error(rs.data,fs.data)}
 
 def run_pilot(config,out,book):
-    from .physics import Physics2D,ReferenceCache
+    from .physics import Physics2D
+    from .relative_feedback import ReferenceCache
     from .relative_feedback import RelativeFeedbackModel
     out=Path(out);out.mkdir(parents=True,exist_ok=True)
     for directory in ['data/online','data/offline','images','timing','cache']:

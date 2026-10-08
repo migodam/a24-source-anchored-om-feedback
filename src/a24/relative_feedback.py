@@ -130,6 +130,8 @@ class ReferenceCache:
             "geometry": {"grid": g.n, "side": g.side, "n_tx": g.n_tx,
                          "n_rx": g.n_rx, "radius_tx": g.radius_tx,
                          "radius_rx": g.radius_rx, "aperture": g.aperture},
+            "source_coordinates_in_order": np.asarray(self.physics.vie.tx).tolist(),
+            "receiver_coordinates_in_order": np.asarray(self.physics.vie.rx).tolist(),
             "frequency_hz": self.physics.frequency_hz,
             "precision": "complex128",
             "material_law": "scalar_chi",

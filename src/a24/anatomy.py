@@ -344,13 +344,20 @@ def _task_metrics(subject, full, physics, eval_material, eval_loads,
     predicted_transfer = np.column_stack([subject.jvp(v) for v in eval_material.T])
     predicted_pullback = np.column_stack([subject.adjoint(v) for v in eval_loads.T])
     cosines = []
+    duality_errors = []
     for a, b in zip(predicted_pullback.T, exact_pullback.T):
         den = float(la.norm(a)*la.norm(b))
         if den > 0.:
             cosines.append(float(np.dot(a, b)/den))
+    for v, load, jv, gradient in zip(eval_material.T, eval_loads.T,
+                                    predicted_transfer.T, predicted_pullback.T):
+        scale = float(la.norm(load)*la.norm(jv)+la.norm(v)*la.norm(gradient))
+        if scale > 0.:
+            duality_errors.append(abs(float(np.dot(load, jv)-np.dot(v, gradient)))/scale)
     return {'full_data_residual': relative_error(subject.data, full.data),
             'material_to_data_transfer_error': relative_error(predicted_transfer, exact_transfer),
             'adjoint_pullback_error': relative_error(predicted_pullback, exact_pullback),
+            'adjoint_error': max(duality_errors) if duality_errors else None,
             'gradient_cosine': min(cosines) if cosines else None,
             'gradient_cosine_nonzero_loads': len(cosines),
             'data_error_absolute': float(la.norm(subject.data-full.data))}, {
@@ -401,6 +408,7 @@ def anatomy(config, out, book=None):
         for background, chi_b in backgrounds(physics.points, config).items():
             book.check()
             current_background = background
+            setup_started = time.perf_counter()
             cache = ReferenceCache(physics, chi_b, book=book, config=config)
             forcing = chi_b[:, None]*physics.incident
             source_basis, source_rank_record = orth_basis(cache.state_b.current, book=book, rtol=rtol)
@@ -492,6 +500,8 @@ def anatomy(config, out, book=None):
                             background+'_source_replace_U': U_replace,
                             background+'_P_raw': P_raw,
                             background+'_anchor_complement': Q_complement})
+            shared_setup_s = time.perf_counter()-setup_started
+            source_checks['shared_background_and_current_basis_setup_seconds'] = shared_setup_s
             # The candidate/full state is first accessed after all current bases freeze.
             chi = _candidate(chi_b, physics.points)
             full = physics.full_state(chi)
@@ -530,13 +540,17 @@ def anatomy(config, out, book=None):
                             delta_data_error=norm_ratio(subject.data-full.data, full.data-cache.yb),
                             state_residual=norm_ratio(subject.L@subject.current-chi[:, None]*physics.incident,
                                                      chi[:, None]*physics.incident))
+                        record['offline_s'] = shared_setup_s
                         vectors[background+'_'+method+'_basis'] = bases[method]
                     else:
                         kind = 'L' if method == 'relative_L' else 'F' if method == 'exact_adjoint_control_F' else 'R'
                         rank = int(config.get('diagnostic_return_rank', 32)) if 'R32' in method else int(config.get('primary_return_rank', 16))
                         local = method == 'relative_R16_local_diagnostic'
-                        model = RelativeFeedbackModel(cache, kind=kind, rank=rank, local=local,
-                                                      seed=master, config=config)
+                        feedback_setup_started = time.perf_counter()
+                        with book.scope('anatomy_offline_feedback_setup'):
+                            model = RelativeFeedbackModel(cache, kind=kind, rank=rank, local=local,
+                                                          seed=master, config=config)
+                        feedback_setup_s = time.perf_counter()-feedback_setup_started
                         state = model.forward(chi)
                         class ModelTasks:
                             data = state.data
@@ -546,20 +560,19 @@ def anatomy(config, out, book=None):
                                 return model.adjoint(chi, v, state)
                         metrics, detail = _task_metrics(ModelTasks(), full, physics, ep, el,
                                                          exact_transfer, exact_pullback)
-                        record.update(metrics, actual_rank=rank if kind == 'R' else None,
+                        record.update(metrics, actual_rank=model.actual_rank if kind == 'R' else None,
                                       material_dimension=2*physics.N, source_dimension=physics.n,
                                       core_margins=state.margins, affine_offset=True,
                                       offset_storage_bytes=cache.state_b.current.nbytes,
-                                      feedback_rank=rank if kind == 'R' else 0 if kind == 'L' else physics.n)
+                                      feedback_rank=model.actual_rank if kind == 'R' else 0 if kind == 'L' else physics.n)
+                        record['offline_s'] = shared_setup_s+feedback_setup_s
+                        record['additional_feedback_setup_seconds'] = feedback_setup_s
                         if kind == 'R':
-                            Ug, Vg, D = cache.prepare_lowrank(rank=rank, local=local,
-                                                            seed=master,
-                                                            oversampling=int(config.get('oversampling', 8)))
                             wprobe = np.stack([mass_unpack(v, physics.volume) for v in ep.T], axis=1)
                             exact_return = cache.gb(wprobe)
-                            approximate_return = D.apply(wprobe)+Ug@(Vg.conj().T@wprobe)
+                            approximate_return = model.feedback_apply(wprobe)
                             record['feedback_action_error'] = relative_error(approximate_return, exact_return)
-                            defect = (chi-chi_b)[:, None]*(cache.gb(state.w)-D.apply(state.w)-Ug@(Vg.conj().T@state.w))
+                            defect = (chi-chi_b)[:, None]*(cache.gb(state.w)-model.feedback_apply(state.w))
                             implicit = cache.state_b.current+cache.solve_ref(state.w)
                             native_residual = full.L@implicit-chi[:, None]*physics.incident
                             record['state_residual'] = norm_ratio(native_residual, chi[:, None]*physics.incident)
@@ -570,6 +583,7 @@ def anatomy(config, out, book=None):
                     record.update(status='OK', reason=None,
                                   online_s=time.perf_counter()-case_started,
                                   rhs_counts=book.delta(before)['counts'],
+                                  peak_bytes=book.receipt()['peak_cpu_rss_bytes'],
                                   costs=book.delta(before))
                     vectors[background+'_'+method+'_transfer'] = detail['transfer']
                     vectors[background+'_'+method+'_pullback'] = detail['pullback']
@@ -618,6 +632,10 @@ def anatomy(config, out, book=None):
               'independent_probe_seed_domains': {'M': 1101, 'O': 2202, 'task_material': 3303, 'task_load': 4404},
               'source_replace_scope': 'A23-style allocation confound: all eight A24 sources replace receiver8; historical A23 used six sources plus two receivers',
               'ledger': book.receipt()}
+    # The CLI's binary gate key is FAIL when verification is incomplete; the
+    # detailed alias and NOT_RUN rows retain the reason for that decision.
+    result['G1_status'] = 'PASS' if result['G1_identity_status'] == 'PASS' else 'FAIL'
+    result['offline_time_definition'] = 'shared setup repeated descriptively per record; do not sum rows; add each incremental feedback setup once'
     # Durable epilogue is charged by inclusive elapsed time even after a stop.
     io_started = time.perf_counter()
     np.savez_compressed(out/'anatomy_vectors.npz', **vectors)

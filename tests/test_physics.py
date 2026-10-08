@@ -191,6 +191,7 @@ class PhysicsTests(unittest.TestCase):
             perm = np.array([6, 2, 0, 7, 3, 1, 5, 4])
             p = Physics2D(grid=8, book=self.book, config=self.config)
             p.incident = p.incident[:, perm].copy()
+            p.vie.tx = p.vie.tx[perm].copy()
             cache = ReferenceCache(p, self.chi_b, book=self.book, config=self.config)
             load_permuted = pack(unpack(self.load, p.q, p.s)[:, perm])
             for name in ('L', 'F', 'R', 'R_LOCAL'):
@@ -227,9 +228,9 @@ class PhysicsTests(unittest.TestCase):
         with self.book.span('A1_unsafe_local_P_control'):
             model = RelativeFeedbackModel(self.cache, 'R', rank=0, config=self.config)
             model.D = LocalBlocks(self.physics.n, (np.array([0]),),
-                                  (np.array([[10.]], dtype=complex),))
+                                  (np.array([[1.]], dtype=complex),))
             chi = self.cache.chi_b.copy()
-            chi[0] += .1
+            chi[0] += 1.
             with self.assertRaisesRegex(NumericalFailure, 'UNSAFE_CORE:P'):
                 model.forward(chi)
 
