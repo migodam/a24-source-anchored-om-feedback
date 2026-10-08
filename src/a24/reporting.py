@@ -169,22 +169,14 @@ def _jobs(root, book):
 def _runtime(config, matrix, preparations, timing, jobs):
     """Measured warm samples plus transparent one-setup accounting projections.
 
-    Repeated preparation groups are associated with jobs only when the count
-    and chronological order match recorded background preparation spans.
-    A mismatch leaves cold projections undefined rather than assuming free
-    geometry. All actual restart costs remain in the job cost table.
+    This frozen pilot has a recorded recovery boundary: job001 delivered every
+    weak condition and the two ring/2401/amplitude .3 conditions; job002 filled
+    the remaining checkpoint rows. Successful image components are matched to
+    that source job's measured geometry span. No failed image is assigned an
+    invented deployment time. Archive export is included in total science job
+    wall, but is not a required step in in-memory deployment setup.
     """
-    groups = list(dict.fromkeys((r.get('background'), r.get('shared_background_s'))
-                               for r in preparations if r.get('status') == 'OK'
-                               and _number(r.get('shared_background_s')) is not None))
-    occurrences = []
-    for job in jobs:
-        if job['row']['command'] != 'no-nn':
-            continue
-        for record in job['ledger']:
-            if record.get('event') == 'background_material_matrix_and_step' and record.get('status') == 'OK':
-                occurrences.append(job)
-    association = dict(zip(groups, occurrences)) if len(groups) == len(occurrences) else {}
+    recorded_jobs = {job['row']['job']: job for job in jobs}
     image_index = {(r['case_id'], r['method']): r for r in matrix}
     first_by_family = list(dict.fromkeys(config['parent_families']))
     parents = [config['parents'][config['parent_families'].index(f)] for f in first_by_family]
@@ -211,36 +203,109 @@ def _runtime(config, matrix, preparations, timing, jobs):
                         matches.append((index, prep))
                 chosen = matches[0] if len(matches) == 1 else None
                 prep = chosen[1] if chosen else {}
-                source = association.get((prep.get('background'), prep.get('shared_background_s')))
+                source = None
+                if (config['protocol_id'] == 'A24-NO-NN-20261008-v1'
+                        and image.get('status') == 'OK'):
+                    first_checkpoint = (background == 'weak' or
+                                        (background == 'ring' and parent == 2401
+                                         and _number(image.get('amplitude')) == .3))
+                    source = recorded_jobs.get('a24-b0-001' if first_checkpoint else 'a24-b0-002')
                 geometry = _number(source['row']['geometry_setup_s']) if source else None
-                shared = _number(prep.get('shared_background_s'))
-                specific = _number(prep.get('specific_setup_s'))
+                shared = _number(image.get('shared_background_s'))
+                specific = _number(image.get('specific_setup_s'))
                 cost = json.loads(prep.get('cost') or '{}')
                 export = _number(cost.get('exclusive_walls', {}).get('feedback_cache_export', 0.))
-                setup = (geometry+shared+specific+export
-                         if all(v is not None for v in (geometry, shared, specific, export)) else None)
+                setup = (geometry+shared+specific
+                         if all(v is not None for v in (geometry, shared, specific)) else None)
+                raw_cold = _number(image.get('cold_image_s'))
                 for reuse in (1, 10, 100):
                     output.append({'case_id': case, 'parent_id': parent, 'background': background,
                                    'method': method, 'N': reuse, 'valid_repeats': len(valid),
                                    'expected_repeats': expected_repeats,
                                    'timing_status': 'COMPLETE' if complete else 'INCOMPLETE_OR_FAILED',
                                    'geometry_setup_s': geometry, 'shared_background_s': shared,
-                                   'specific_setup_s': specific, 'cache_export_span_s': export,
+                                   'specific_setup_s': specific, 'archive_cache_export_span_s': export,
                                    'setup_including_geometry_s': setup,
                                    'setup_source_row': chosen[0] if chosen else None,
                                    'setup_source_job': source['row']['job'] if source else None,
-                                   'setup_association': 'MATCHED_COMPONENTS_AND_CHRONOLOGICAL_SPANS'
+                                   'setup_association': 'RECORDED_RECOVERY_BOUNDARY_AND_IMAGE_COMPONENTS'
                                    if source else 'UNRESOLVED_NO_COLD_CLAIM',
+                                   'setup_provenance': 'job001: weak16 + ring2401/.3/zero,snr20; job002: checkpoint recovery',
                                    'warm_median_s': warm,
                                    'warm_min_s': min(valid) if valid else None,
                                    'warm_max_s': max(valid) if valid else None,
-                                   'driver_cold_image_excluding_geometry_s': _number(image.get('cold_image_s')),
+                                   'driver_cold_image_excluding_geometry_s': raw_cold,
+                                   'cold_in_memory_image_s': raw_cold+geometry
+                                   if raw_cold is not None and geometry is not None else None,
+                                   'disk_loaded_cache_cold_s': None,
+                                   'disk_loaded_cache_status': 'NOT_RUN',
                                    'cold_components_plus_warm_s': setup+warm if setup is not None and warm is not None else None,
                                    'amortized_per_image_s': warm+setup/reuse if setup is not None and warm is not None else None,
                                    'projected_total_s': setup+reuse*warm if setup is not None and warm is not None else None,
                                    'evidence': 'accounting projection of measured components; N deployments NOT_RUN',
                                    'unsegmented_io': 'remaining cache/data I/O is in full job wall; not individually allocated'})
     return output
+
+
+def _descriptive_pairs(config, matrix):
+    """Same-condition pairs and complete weak-background parent descriptions.
+
+    These are never official full-eight-condition parent means or gates.
+    Percent gains are calculated within each parent before equal weighting.
+    """
+    index = {(r['case_id'], r['method']): r for r in matrix}
+    per_parent = []
+    expected = len(config['amplitudes'])*len(config['noise_snr_db'])
+    for background in ('weak', 'ring'):
+        for parent, family in zip(config['parents'], config['parent_families']):
+            pairs = []
+            for amplitude in config['amplitudes']:
+                for noise in config['noise_snr_db']:
+                    case = _case_id(background, parent, amplitude, noise)
+                    arms = [index.get((case, method), {}) for method in ('L', 'F', 'R16')]
+                    if all(r.get('status') == 'OK' and _number(r.get('material_nrmse')) is not None
+                           for r in arms):
+                        pairs.append([_number(r['material_nrmse']) for r in arms])
+            means = [statistics.mean(p[i] for p in pairs) for i in range(3)] if pairs else [None]*3
+            l, f, r = means
+            per_parent.append({'background': background, 'parent_id': parent, 'family': family,
+                               'paired_conditions': len(pairs), 'expected_background_conditions': expected,
+                               'complete_background_subgroup': len(pairs) == expected,
+                               'L_available_paired_mean': l, 'F_available_paired_mean': f,
+                               'R16_available_paired_mean': r,
+                               'F_gain_percent': 100*(l-f)/l if l is not None and l > 0 else None,
+                               'R_gain_percent': 100*(l-r)/l if l is not None and l > 0 else None,
+                               'R_gain_retention': (l-r)/(l-f) if l is not None and l > f else None,
+                               'scope': 'descriptive same-condition background subgroup; not full8 gate mean'})
+    summaries = []
+    for background in ('weak', 'ring'):
+        subset = [r for r in per_parent if r['background'] == background]
+        permitted = background == 'weak' and all(r['complete_background_subgroup'] for r in subset)
+        summary = {'background': background, 'parents': len(subset),
+                   'complete_background_parents': sum(r['complete_background_subgroup'] for r in subset),
+                   'status': 'COMPLETE_WEAK_SUBGROUP_DESCRIPTION' if permitted else 'NO_EQUAL_PARENT_SUBGROUP_AGGREGATE',
+                   'scope': 'equal weight across four exposed parents; NOT official full8/gate statistic'}
+        for key in ('L_available_paired_mean','F_available_paired_mean','R16_available_paired_mean',
+                    'F_gain_percent','R_gain_percent','R_gain_retention'):
+            values = [r[key] for r in subset if r[key] is not None]
+            summary[key] = statistics.mean(values) if permitted and len(values) == len(subset) else None
+        summaries.append(summary)
+    return per_parent, summaries
+
+
+def _task_ranges(tasks):
+    primary = [r for r in tasks if r.get('method') == 'R16' and r.get('status') == 'OK']
+    rows = []
+    for key in ('independent_transfer_error','independent_adjoint_error','gradient_cosine',
+                'independent_state_data_error'):
+        values = [_number(r.get(key)) for r in primary]
+        values = [v for v in values if v is not None]
+        rows.append({'metric': key, 'available_same_estimate_conditions': len(values),
+                     'expected_conditions': 32, 'minimum': min(values) if values else None,
+                     'median': statistics.median(values) if values else None,
+                     'maximum': max(values) if values else None,
+                     'scope': 'available R16 legal-estimate evaluator tasks; missing12 not replaced'})
+    return rows
 
 
 def _save_figure(fig, stem, directory, book, plt):
@@ -416,7 +481,8 @@ def _montages(root, config, matrix, directory, data_directory, book, plt):
 
 
 def _reports(config, root, anatomy, gate, matrix, parents, tasks, timing, runtime,
-             preparations, failures, jobs, confirmation, confirmation_rows, figures, manifest):
+             preparations, failures, jobs, confirmation, confirmation_rows, figures, manifest,
+             paired_background, background_summary, task_summary):
     statuses = Counter(r.get('status', 'UNKNOWN') for r in matrix)
     expected = len(matrix)
     unit = []
@@ -439,8 +505,13 @@ def _reports(config, root, anatomy, gate, matrix, parents, tasks, timing, runtim
     baseline += [{'method': key, 'status': value} for key, value in config.get('missing_baselines', {}).items()]
     runtime_columns = [('case_id', 'condition'), ('method', 'method'), ('N', 'N'), ('valid_repeats', '有效重复'),
                        ('geometry_setup_s', 'geometry s'), ('setup_including_geometry_s', '一次setup s'),
-                       ('warm_median_s', 'warm median s'), ('cold_components_plus_warm_s', 'cold组成 s'),
+                       ('warm_median_s', 'warm median s'), ('cold_in_memory_image_s', '实测组成cold s'),
                        ('amortized_per_image_s', '摊销/image s'), ('timing_status', 'status')]
+    pair_columns = [('background','背景'),('parent_id','parent'),('paired_conditions','成对条件'),
+                    ('expected_background_conditions','应有'),('L_available_paired_mean','L NRMSE'),
+                    ('F_available_paired_mean','F NRMSE'),('R16_available_paired_mean','R16 NRMSE'),
+                    ('F_gain_percent','F改善%'),('R_gain_percent','R改善%'),('R_gain_retention','R保留比')]
+    counterexamples = gate.get('G2', {}).get('observed_task_counterexamples', [])
     evidence = [{'level': '理论', 'status': 'FORMULAS_AND_COUNTEREXAMPLES_ONLY', 'limit': '来源 theory/；不产生图像或速度结论'},
                 {'level': 'A0/unit', 'status': 'PASS' if unit and all(r.get('passed') for r in unit) else 'NOT_RUN_OR_FAILED',
                  'limit': '离散代数与实现核验；不能替代成像'},
@@ -539,6 +610,22 @@ rho未定义，不填0，也不将小ratio当证据。此状态与未运行、�
 独立task audit在同一在线R估计处使用固定material probes/data loads，
 其已获诊断不能补足缺失条件。普通adjoint与F使用同一完整离散forward/adjoint合同。
 
+### 4.1 同条件配对的描述性background子组
+
+下表只比较同一条件的L/F/R16，按每个parent先计算平均与百分比gain。
+weak背景每个parent四条件完整，因此允许四parent等权的weak子组描述；
+它不等于预注册跨两背景的full-eight official parent mean。
+ring的部分配对值保留，但不组成完整四parent背景均值，不用于Gate3。
+
+{_table(paired_background, pair_columns)}
+
+{_table(background_summary, [('background','背景'),('complete_background_parents','完整parent数'),('L_available_paired_mean','等权L'),('F_available_paired_mean','等权F'),('R16_available_paired_mean','等权R16'),('F_gain_percent','parent等权F改善%'),('R_gain_percent','parent等权R改善%'),('status','范围')])}
+
+同一合法R16估计处的已获task范围如下；20个可用估计不替换应有32个条件。
+范围是已观测值的描述，不给缺失条件赋值。
+
+{_table(task_summary, [('metric','任务量'),('available_same_estimate_conditions','可用条件'),('expected_conditions','应有条件'),('minimum','min'),('median','median'),('maximum','max')])}
+
 ## 5. 缺失与等价基线
 
 {_table(baseline, [('method','baseline'),('status','合同或缺失原因')])}
@@ -551,18 +638,33 @@ R32和local R16为预注册diagnostic arms，不能在test后择优替代primary
 
 {_table(gates, [('gate','Gate'),('status','保存状态'),('threshold','冻结阈值')])}
 
-G2/G3的HOLD表示完整比较证据不足；布尔false不能自动解释为反馈理论已被证伪。
+G2保存状态为`{gate.get('G2', {}).get('status', 'NOT_RUN')}`；
+已观测独立任务反例数为{len(counterexamples)}。任何有效条件超过冻结5%任务误差
+或低于0.99方向cosine即可否定“所有条件均满足”的当前R16充分性要求，
+缺失条件不能擦除这个反例。因此observed-task FAIL与image coverage不足分开记录。
+G3保存状态为`{gate.get('G3', {}).get('status', 'NOT_RUN')}`；HOLD来自完整parent图像比较不足，
+不是由R16任务反例自动判定F反馈headroom不存在。G1身份核验的PASS也不抵消任务反例。
 F headroom、R gain retention与两家族支持只按保存的完整parent合同判断。
 G5保存joint-quality命中数为{gate.get('G5', {}).get('quality_rows', 'NOT_RUN')}；
 `{gate.get('G5', {}).get('status', 'NOT_RUN')}`下不能从较差图像的时间称更快成像算法。
 最终结论需同时审阅失败、完整full-data验证及缺失baseline。
 
+{_table(counterexamples, [('case_id','已观测反例'),('transfer_error','material-transfer error'),('adjoint_error','adjoint error'),('gradient_cosine','gradient cosine')])}
+
+首次controller缺失优先的历史结果保存在
+[GATE_DECISION_INITIAL_CONTROLLER.json](results/b0/GATE_DECISION_INITIAL_CONTROLLER.json)。
+父线程修正了已观测反例与覆盖不足的判定优先级；阈值、数值结果与冻结协议未改，
+未为此重跑物理或成像。本报告只读取修正后保存决策。
+
 ## 7. 成本、cold/warm与N=1/10/100
 
 计时只报告预注册矩阵中的实际重复，warm包含共同初始化与三步重建。
-一次setup包括匹配PREPARATION记录的shared background、method setup、已分段cache
-export以及对应job实测`tm2d_geometry_setup`。原`cold_image_s`没有geometry，
-因此保留其原列并另给包含geometry的组成值，不把原列称完整cold。
+一次内存中部署setup包括image记录的shared background、method setup及对应job实测
+`tm2d_geometry_setup`。cache export是科学存档I/O，计入inclusive science job time，
+不强加给内存中部署setup。job001完成全部weak16条件及ring/2401/幅度.3的两条件；
+job002从checkpoint补齐其它记录。成功image使用这一透明恢复边界关联几何成本。
+原`cold_image_s`没有geometry，`cold_in_memory_image_s=raw cold_image_s+实际job geometry`。
+表中另给`setup+warm median`的计费组成；不将它假称新测cold deployment。
 restart的setup全部进入实际job总wall；表中的同一setup仅重复展示给不同N，不能求和。
 无法关联setup与job时cold为空，不假定geometry免费。
 
@@ -570,6 +672,8 @@ N=1的cold组成=`setup+warm`，N=10/100的每图摊销=`warm+setup/N`，
 total=`setup+N*warm`。它们是实测组成的计费投影，N次完整部署未执行。
 剩余cache/data I/O、失败、独立评价与reporting都在inclusive job wall内，
 未单独分段I/O不按0隐藏，也不虚构每次重新setup。
+必须从磁盘加载保存cache的cold部署未计时，保持`disk_loaded_cache_status=NOT_RUN`。
+这里的cold为内存中setup与重建组成，不包含完整程序启动或磁盘cache加载的实测。
 
 {_table(runtime, runtime_columns)}
 
@@ -615,6 +719,23 @@ all eight conditions, and unavailable metrics remain null.
 
 {_table(gates, [('gate','Gate'),('status','Status'),('threshold','Frozen threshold')])}
 
+G2 observed-task counterexamples are failures of the frozen universal R16 task
+criterion, even with missing image conditions. G3 image/headroom coverage remains
+separate. Missing observations cannot erase an observed valid counterexample;
+passing G1 identities cannot substitute for G2 accuracy.
+
+{_table(counterexamples, [('case_id','Observed counterexample'),('transfer_error','Transfer error'),('adjoint_error','Adjoint error'),('gradient_cosine','Gradient cosine')])}
+
+Descriptive paired background subgroups (not full-eight official parent means):
+
+{_table(paired_background, pair_columns)}
+
+{_table(background_summary, [('background','Background'),('complete_background_parents','Complete parents'),('F_gain_percent','Equal-parent F gain %'),('R_gain_percent','Equal-parent R gain %'),('status','Scope')])}
+
+Available legal-estimate R16 task ranges; missing conditions remain missing:
+
+{_table(task_summary, [('metric','Metric'),('available_same_estimate_conditions','Available'),('expected_conditions','Expected'),('minimum','Min'),('median','Median'),('maximum','Max')])}
+
 ## Actual inclusive costs and provenance
 
 {_table([j['row'] for j in jobs], [('job','Job'),('command','Command'),('stage','Stage'),('status','Status'),('wall_seconds','Wall s'),('process_cpu_seconds','CPU s'),('new_clean_labels','New labels'),('geometry_setup_s','Geometry s'),('source_commit','Source commit')])}
@@ -624,9 +745,13 @@ walls. The current report job snapshot ends before this report's final export; i
 job_receipt.json is authoritative for total reporting cost.
 
 Cold accounting adds the actual per-job tm2d_geometry_setup omitted by the driver's
-original cold_image_s. Matching repeated PREPARATION groups uses recorded component
-values and chronology; unresolved associations stay null. Cache/data I/O not segmented
-as separate spans remains in full job wall overhead. N=10/100 values are accounting
+original cold_image_s: cold_in_memory_image_s = raw cold_image_s + source-job geometry.
+The recorded recovery boundary assigns all weak conditions plus ring2401/.3 zero/20dB
+to job001 and successful remaining checkpoint images to job002. Actual image shared
+and method setup components are used; unresolved/failed associations stay null.
+Archive cache export is science I/O in full job wall, not mandatory in-memory setup.
+Disk-loaded-cache deployment cold is NOT_RUN. Remaining unsegmented cache/data I/O
+stays in full job wall overhead. N=10/100 values are accounting
 projections from a single setup and measured warm medians, not measured N deployments.
 No time-to-image superiority is asserted outside the joint quality region.
 
@@ -680,6 +805,8 @@ def build_report(config, repo_root, book):
         matrix = _conditions(config, raw)
         parents = _parent_summary(config, matrix)
         runtime = _runtime(config, matrix, preparations, timing, jobs)
+        paired_background, background_summary = _descriptive_pairs(config, matrix)
+        task_summary = _task_ranges(tasks)
         confirmation = _read_json(root/'results/confirmation3d/SUMMARY.json', {})
         confirmation_rows = _read_csv(root/'results/confirmation3d/CASES.csv')
         anatomy_fields = ('case_id','background','method','status','reason','actual_rank','retained_rank',
@@ -689,6 +816,9 @@ def build_report(config, repo_root, book):
         tables = {'condition_plot_data': matrix, 'condition_raw_records': raw,
                   'condition_failures': [r for r in matrix if r.get('status') != 'OK'],
                   'parent_metrics': parents, 'task_plot_data': tasks, 'timing_raw': timing,
+                  'paired_background_parent_description': paired_background,
+                  'weak_equal_parent_description': background_summary,
+                  'R16_same_estimate_task_ranges': task_summary,
                   'runtime_N1_N10_N100': runtime, 'preparation_raw': preparations,
                   'failure_ledger': failures, 'job_costs': [j['row'] for j in jobs],
                   'confirmation3d_conditions': confirmation_rows,
@@ -741,7 +871,8 @@ def build_report(config, repo_root, book):
         manifest['figures'] = figures
         manifest['elapsed_seconds_before_final_export'] = time.perf_counter()-started
         _reports(config, root, anatomy, gate, matrix, parents, tasks, timing, runtime,
-                 preparations, failures, jobs, confirmation, confirmation_rows, figures, manifest)
+                 preparations, failures, jobs, confirmation, confirmation_rows, figures, manifest,
+                 paired_background, background_summary, task_summary)
         write_json(output/'REPORT_MANIFEST.json', manifest)
         span.update(report_root=str(output), figures=len(figures), condition_rows=len(matrix),
                     plot_failures=len(manifest['read_failures']))

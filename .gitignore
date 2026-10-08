@@ -3,3 +3,6 @@ __pycache__/
 .venv/
 private/
 *.tmp
+results/jobs/*/COST_LEDGER.jsonl
+results/jobs/a24-delivery-*/
+publication/A24_COMPLETE_COST_LEDGERS.zip
