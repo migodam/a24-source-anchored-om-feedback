@@ -1,0 +1,3 @@
+background,parents,complete_background_parents,status,scope,L_available_paired_mean,F_available_paired_mean,R16_available_paired_mean,F_gain_percent,R_gain_percent,R_gain_retention
+weak,4,4,COMPLETE_WEAK_SUBGROUP_DESCRIPTION,equal weight across four exposed parents; NOT official full8/gate statistic,0.571396709013127,0.5487911746737201,0.5501314814033831,3.9793598963585364,3.741747889167162,0.9438472297214374
+ring,4,0,NO_EQUAL_PARENT_SUBGROUP_AGGREGATE,equal weight across four exposed parents; NOT official full8/gate statistic,,,,,,

@@ -1,0 +1,5 @@
+metric,available_same_estimate_conditions,expected_conditions,minimum,median,maximum,scope
+independent_transfer_error,20,32,0.005522932293430412,0.016324242972544853,0.053517700247331344,available R16 legal-estimate evaluator tasks; missing12 not replaced
+independent_adjoint_error,20,32,0.005248090882807675,0.015417443293034294,0.05377764158719661,available R16 legal-estimate evaluator tasks; missing12 not replaced
+gradient_cosine,20,32,0.9952640593002813,0.9994736417844147,0.9999918923551896,available R16 legal-estimate evaluator tasks; missing12 not replaced
+independent_state_data_error,20,32,3.216378294577335e-05,0.0015149718267937519,0.00918907888212846,available R16 legal-estimate evaluator tasks; missing12 not replaced

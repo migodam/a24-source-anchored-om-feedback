@@ -1,0 +1,9 @@
+background,parent_id,family,paired_conditions,expected_background_conditions,complete_background_subgroup,L_available_paired_mean,F_available_paired_mean,R16_available_paired_mean,F_gain_percent,R_gain_percent,R_gain_retention,scope
+weak,2401,multiscale_shell,4,4,True,0.5494898523168061,0.5384198569172662,0.5390257048868874,2.0145950562809554,1.9043386125874595,0.9452711633785923,descriptive same-condition background subgroup; not full8 gate mean
+weak,2402,multiscale_shell,4,4,True,0.5985334958022259,0.57765342747833,0.5781012132853918,3.488537979968845,3.4137241541425136,0.9785543897598616,descriptive same-condition background subgroup; not full8 gate mean
+weak,2403,asymmetric_piecewise,4,4,True,0.5363323530064339,0.5021024688610622,0.5045329202067801,6.382215048839506,5.929053621583842,0.9289962146703183,descriptive same-condition background subgroup; not full8 gate mean
+weak,2404,asymmetric_piecewise,4,4,True,0.6012311349270419,0.5769889454382219,0.578866087234473,4.032091500344839,3.719875168354833,0.9225671510769774,descriptive same-condition background subgroup; not full8 gate mean
+ring,2401,multiscale_shell,2,4,False,0.07520073678940009,0.07518869420351229,0.07518885321793722,0.01601392007837062,0.01580246679782848,0.9867956578084999,descriptive same-condition background subgroup; not full8 gate mean
+ring,2402,multiscale_shell,2,4,False,0.08959880408915973,0.08949960728766534,0.08950120741166034,0.11071219365346652,0.1089263171439911,0.9838691976868846,descriptive same-condition background subgroup; not full8 gate mean
+ring,2403,asymmetric_piecewise,0,4,False,,,,,,,descriptive same-condition background subgroup; not full8 gate mean
+ring,2404,asymmetric_piecewise,0,4,False,,,,,,,descriptive same-condition background subgroup; not full8 gate mean

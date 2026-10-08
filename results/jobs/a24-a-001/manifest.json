@@ -1,0 +1,14 @@
+{
+  "command": "anatomy",
+  "job": "a24-a-001",
+  "source_commit": "4d6fedcbc603b562e1aa0d6d57655174276170c7",
+  "python": "3.13.13",
+  "device": "cpu",
+  "argv": [
+    "./src/a24/cli.py",
+    "anatomy",
+    "--job",
+    "a24-a-001"
+  ],
+  "protocol_id": "A24-NO-NN-20261008-v1"
+}

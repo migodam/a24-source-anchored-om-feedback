@@ -1,0 +1,445 @@
+{
+  "protocol_id": "A24-NO-NN-20261008-v1",
+  "G1": {
+    "status": "PASS",
+    "threshold": 1e-10,
+    "numerical_evidence": "COMPLETE"
+  },
+  "G2": {
+    "status": "HOLD",
+    "thresholds": {
+      "task_max": 0.05,
+      "cosine_min": 0.99,
+      "image_degradation_max": 0.05
+    },
+    "independent_task_rows": 20,
+    "expected_task_rows": 32,
+    "tasks_pass": false,
+    "image_pass": false,
+    "interpretation": "Independent task tests at same online R estimate; no truth-state Jacobian."
+  },
+  "G3": {
+    "status": "HOLD",
+    "F_headroom": false,
+    "R_retention_pass": false,
+    "closure_pass": false,
+    "data_budget_pass": false,
+    "family_support": [
+      {
+        "family": "multiscale_shell",
+        "headroom_parents": [],
+        "retained_parents": []
+      },
+      {
+        "family": "asymmetric_piecewise",
+        "headroom_parents": [],
+        "retained_parents": []
+      }
+    ],
+    "parent_means": [
+      {
+        "parent_id": 2401,
+        "family": "multiscale_shell",
+        "L": null,
+        "F": null,
+        "R16": null,
+        "F_relative_improvement": null,
+        "R_gain_retention": null,
+        "R_relative_degradation_vs_F": null
+      },
+      {
+        "parent_id": 2402,
+        "family": "multiscale_shell",
+        "L": null,
+        "F": null,
+        "R16": null,
+        "F_relative_improvement": null,
+        "R_gain_retention": null,
+        "R_relative_degradation_vs_F": null
+      },
+      {
+        "parent_id": 2403,
+        "family": "asymmetric_piecewise",
+        "L": null,
+        "F": null,
+        "R16": null,
+        "F_relative_improvement": null,
+        "R_gain_retention": null,
+        "R_relative_degradation_vs_F": null
+      },
+      {
+        "parent_id": 2404,
+        "family": "asymmetric_piecewise",
+        "L": null,
+        "F": null,
+        "R16": null,
+        "F_relative_improvement": null,
+        "R_gain_retention": null,
+        "R_relative_degradation_vs_F": null
+      }
+    ],
+    "case_checks": [
+      {
+        "case_id": "weak_2401_0.3_zero",
+        "status": "OK",
+        "rho": 0.04528175612744765,
+        "closure_pass": true,
+        "data_pass": false,
+        "F_full_residual": 0.28081816935992887,
+        "R_full_residual": 0.28146595714029055
+      },
+      {
+        "case_id": "weak_2401_0.3_snr20",
+        "status": "OK",
+        "rho": null,
+        "closure_pass": false,
+        "data_pass": true,
+        "F_full_residual": 67.86882254587228,
+        "R_full_residual": 68.00886154824738
+      },
+      {
+        "case_id": "weak_2401_1.2_zero",
+        "status": "OK",
+        "rho": 0.04477900956982471,
+        "closure_pass": true,
+        "data_pass": false,
+        "F_full_residual": 0.34733967187619036,
+        "R_full_residual": 0.3496443652464731
+      },
+      {
+        "case_id": "weak_2401_1.2_snr20",
+        "status": "OK",
+        "rho": 0.0447362621689908,
+        "closure_pass": true,
+        "data_pass": true,
+        "F_full_residual": 81.70153383872942,
+        "R_full_residual": 82.17877907249114
+      },
+      {
+        "case_id": "weak_2402_0.3_zero",
+        "status": "OK",
+        "rho": 0.02894158417776769,
+        "closure_pass": true,
+        "data_pass": false,
+        "F_full_residual": 0.2069520160815935,
+        "R_full_residual": 0.20710099616001057
+      },
+      {
+        "case_id": "weak_2402_0.3_snr20",
+        "status": "OK",
+        "rho": null,
+        "closure_pass": false,
+        "data_pass": true,
+        "F_full_residual": 52.70452452471276,
+        "R_full_residual": 52.731799532498414
+      },
+      {
+        "case_id": "weak_2402_1.2_zero",
+        "status": "OK",
+        "rho": 0.03255728740643087,
+        "closure_pass": true,
+        "data_pass": false,
+        "F_full_residual": 0.28348454907698545,
+        "R_full_residual": 0.2846402151883264
+      },
+      {
+        "case_id": "weak_2402_1.2_snr20",
+        "status": "OK",
+        "rho": 0.03270958579080414,
+        "closure_pass": true,
+        "data_pass": true,
+        "F_full_residual": 68.76897408828522,
+        "R_full_residual": 69.01383621140492
+      },
+      {
+        "case_id": "weak_2403_0.3_zero",
+        "status": "OK",
+        "rho": 0.04712336892704429,
+        "closure_pass": true,
+        "data_pass": false,
+        "F_full_residual": 0.2891094749373828,
+        "R_full_residual": 0.2907164482868765
+      },
+      {
+        "case_id": "weak_2403_0.3_snr20",
+        "status": "OK",
+        "rho": 0.04659024667414641,
+        "closure_pass": true,
+        "data_pass": true,
+        "F_full_residual": 68.13998302705208,
+        "R_full_residual": 68.47793858129639
+      },
+      {
+        "case_id": "weak_2403_1.2_zero",
+        "status": "OK",
+        "rho": 0.040850700923632535,
+        "closure_pass": true,
+        "data_pass": false,
+        "F_full_residual": 0.4037650972416669,
+        "R_full_residual": 0.40714553238192214
+      },
+      {
+        "case_id": "weak_2403_1.2_snr20",
+        "status": "OK",
+        "rho": 0.04070044691318371,
+        "closure_pass": true,
+        "data_pass": true,
+        "F_full_residual": 93.96150796812425,
+        "R_full_residual": 94.68487773221366
+      },
+      {
+        "case_id": "weak_2404_0.3_zero",
+        "status": "OK",
+        "rho": 0.04185278461813412,
+        "closure_pass": true,
+        "data_pass": false,
+        "F_full_residual": 0.278092334564596,
+        "R_full_residual": 0.27880197563802156
+      },
+      {
+        "case_id": "weak_2404_0.3_snr20",
+        "status": "OK",
+        "rho": null,
+        "closure_pass": false,
+        "data_pass": true,
+        "F_full_residual": 65.37172325801733,
+        "R_full_residual": 65.5182877845734
+      },
+      {
+        "case_id": "weak_2404_1.2_zero",
+        "status": "OK",
+        "rho": 0.04380678191469074,
+        "closure_pass": true,
+        "data_pass": false,
+        "F_full_residual": 0.3656074813918596,
+        "R_full_residual": 0.3684777158418806
+      },
+      {
+        "case_id": "weak_2404_1.2_snr20",
+        "status": "OK",
+        "rho": 0.04405392866577332,
+        "closure_pass": true,
+        "data_pass": true,
+        "F_full_residual": 84.79945984574634,
+        "R_full_residual": 85.41237516068112
+      },
+      {
+        "case_id": "ring_2401_0.3_zero",
+        "status": "OK",
+        "rho": 0.038150736068983886,
+        "closure_pass": true,
+        "data_pass": true,
+        "F_full_residual": 0.7613721436392543,
+        "R_full_residual": 0.7613687830944382
+      },
+      {
+        "case_id": "ring_2401_0.3_snr20",
+        "status": "OK",
+        "rho": null,
+        "closure_pass": false,
+        "data_pass": true,
+        "F_full_residual": 173.6040497845917,
+        "R_full_residual": 173.60422881622281
+      },
+      {
+        "case_id": "ring_2401_1.2_zero",
+        "status": "MISSING_OR_FAILURE",
+        "closure_pass": false,
+        "data_pass": false
+      },
+      {
+        "case_id": "ring_2401_1.2_snr20",
+        "status": "MISSING_OR_FAILURE",
+        "closure_pass": false,
+        "data_pass": false
+      },
+      {
+        "case_id": "ring_2402_0.3_zero",
+        "status": "OK",
+        "rho": 0.03896695526605498,
+        "closure_pass": true,
+        "data_pass": false,
+        "F_full_residual": 0.5432585541380673,
+        "R_full_residual": 0.5432590974954284
+      },
+      {
+        "case_id": "ring_2402_0.3_snr20",
+        "status": "OK",
+        "rho": null,
+        "closure_pass": false,
+        "data_pass": true,
+        "F_full_residual": 126.13616153723014,
+        "R_full_residual": 126.13633848315811
+      },
+      {
+        "case_id": "ring_2402_1.2_zero",
+        "status": "MISSING_OR_FAILURE",
+        "closure_pass": false,
+        "data_pass": false
+      },
+      {
+        "case_id": "ring_2402_1.2_snr20",
+        "status": "MISSING_OR_FAILURE",
+        "closure_pass": false,
+        "data_pass": false
+      },
+      {
+        "case_id": "ring_2403_0.3_zero",
+        "status": "MISSING_OR_FAILURE",
+        "closure_pass": false,
+        "data_pass": false
+      },
+      {
+        "case_id": "ring_2403_0.3_snr20",
+        "status": "MISSING_OR_FAILURE",
+        "closure_pass": false,
+        "data_pass": false
+      },
+      {
+        "case_id": "ring_2403_1.2_zero",
+        "status": "MISSING_OR_FAILURE",
+        "closure_pass": false,
+        "data_pass": false
+      },
+      {
+        "case_id": "ring_2403_1.2_snr20",
+        "status": "MISSING_OR_FAILURE",
+        "closure_pass": false,
+        "data_pass": false
+      },
+      {
+        "case_id": "ring_2404_0.3_zero",
+        "status": "MISSING_OR_FAILURE",
+        "closure_pass": false,
+        "data_pass": false
+      },
+      {
+        "case_id": "ring_2404_0.3_snr20",
+        "status": "MISSING_OR_FAILURE",
+        "closure_pass": false,
+        "data_pass": false
+      },
+      {
+        "case_id": "ring_2404_1.2_zero",
+        "status": "MISSING_OR_FAILURE",
+        "closure_pass": false,
+        "data_pass": false
+      },
+      {
+        "case_id": "ring_2404_1.2_snr20",
+        "status": "MISSING_OR_FAILURE",
+        "closure_pass": false,
+        "data_pass": false
+      }
+    ],
+    "complete": false,
+    "required_parent_counts": {
+      "L": {
+        "2401": {
+          "expected": 8,
+          "rows": 8,
+          "valid": 6
+        },
+        "2402": {
+          "expected": 8,
+          "rows": 8,
+          "valid": 6
+        },
+        "2403": {
+          "expected": 8,
+          "rows": 8,
+          "valid": 4
+        },
+        "2404": {
+          "expected": 8,
+          "rows": 8,
+          "valid": 4
+        }
+      },
+      "F": {
+        "2401": {
+          "expected": 8,
+          "rows": 8,
+          "valid": 6
+        },
+        "2402": {
+          "expected": 8,
+          "rows": 8,
+          "valid": 6
+        },
+        "2403": {
+          "expected": 8,
+          "rows": 8,
+          "valid": 4
+        },
+        "2404": {
+          "expected": 8,
+          "rows": 8,
+          "valid": 4
+        }
+      },
+      "R16": {
+        "2401": {
+          "expected": 8,
+          "rows": 8,
+          "valid": 6
+        },
+        "2402": {
+          "expected": 8,
+          "rows": 8,
+          "valid": 6
+        },
+        "2403": {
+          "expected": 8,
+          "rows": 8,
+          "valid": 4
+        },
+        "2404": {
+          "expected": 8,
+          "rows": 8,
+          "valid": 4
+        }
+      }
+    },
+    "thresholds": {
+      "F_improvement": 0.1,
+      "R_gain_retention": 0.8,
+      "rho_closure_max": 0.5
+    }
+  },
+  "G4": {
+    "status": "NOT_RUN_TRAINING_DISABLED"
+  },
+  "G5": {
+    "status": "QUALITY_TARGET_NOT_REACHED",
+    "threshold": 0.2,
+    "quality_rows": 0,
+    "quality_rows_by_method": {
+      "L": 0,
+      "F": 0,
+      "R16": 0,
+      "R32_DIAGNOSTIC": 0,
+      "R16_LOCAL_DIAGNOSTIC": 0,
+      "AFFINE_ROM32": 0,
+      "BORN_TV": 0
+    },
+    "matched_quality_timing_pairs": [],
+    "reuse_counts": [
+      1,
+      10,
+      100
+    ],
+    "missing_baselines": {
+      "SOM_FFT_TSOM": "NOT_COMPARABLE: existing Gaussian-parameter fit changes material prior and optimizer",
+      "CIE_I_WT_TSOM": "NOT_IMPLEMENTED"
+    },
+    "global_algorithm_superiority": "NOT_ESTABLISHED"
+  },
+  "decision": "HOLD_INCOMPLETE",
+  "nn_training": "NOT_RUN",
+  "expansion": "NOT_AUTHORIZED",
+  "case_rows": 224,
+  "expected_case_rows": 224,
+  "full_reference_is_truth_state": false,
+  "statistics": "four parent clusters only; no formal generalization claim"
+}

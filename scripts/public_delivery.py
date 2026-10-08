@@ -30,20 +30,24 @@ def get_public(book,url):
 def prepare(book):
     archive=ROOT/'results/archive';archive.mkdir(exist_ok=True)
     rows=[]
+    substitutions={str(ROOT):'.',str(ROOT.parents[1]/'.venv_nn'):'<local-python-environment>'}
     with book.span('archive_complete_cost_ledgers'):
         for receipt in sorted((ROOT/'results/jobs').glob('*/job_receipt.json')):
-            if receipt.parent.name.startswith('a24-delivery-'):continue
             row=json.loads(receipt.read_text());row['job']=receipt.parent.name;rows.append(row)
             path=receipt.parent/'COST_LEDGER.jsonl'
             if path.exists():
                 target=archive/(receipt.parent.name+'.COST_LEDGER.jsonl.gz')
-                with path.open('rb') as src,target.open('wb') as dest:
+                with path.open('r',encoding='utf-8') as src,target.open('wb') as dest:
                     with gzip.GzipFile(fileobj=dest,mode='wb',mtime=0) as compressed:
-                        shutil.copyfileobj(src,compressed)
+                        for line in src:
+                            for a,b in substitutions.items():line=line.replace(a,b)
+                            compressed.write(line.encode('utf-8'))
     # Publish a portable metadata copy; exact original local paths stay ignored.
-    substitutions={str(ROOT):'.',str(ROOT.parents[1]/'.venv_nn'):'<local-python-environment>'}
     audit={'private_credentials_found':False,'path_redacted_files':[],'sha256_checks_performed':False,
            'scientific_values_modified':False,'physics_actions':0,'cost_archives':'results/archive/'}
+    previous_audit=ROOT/'publication/PUBLIC_ARTIFACT_AUDIT.json'
+    if previous_audit.exists():
+        audit['path_redacted_files']=json.loads(previous_audit.read_text()).get('path_redacted_files',[])
     forbidden=re.compile(r'-----BEGIN (?:RSA |OPENSSH |EC )?PRIVATE KEY-----|\bgh[pousr]_[A-Za-z0-9]{30,}|\bsk-[A-Za-z0-9_-]{32,}')
     saved=ROOT/'private/pre_publication_metadata';saved.mkdir(parents=True,exist_ok=True)
     with book.span('public_artifact_metadata_audit'):
@@ -60,7 +64,9 @@ def prepare(book):
                 if text!=original:
                     backup=saved/p.relative_to(ROOT);backup.parent.mkdir(parents=True,exist_ok=True)
                     if not backup.exists():backup.write_text(original,encoding='utf-8')
-                    p.write_text(text,encoding='utf-8');audit['path_redacted_files'].append(str(p.relative_to(ROOT)))
+                    p.write_text(text,encoding='utf-8')
+                    if str(p.relative_to(ROOT)) not in audit['path_redacted_files']:
+                        audit['path_redacted_files'].append(str(p.relative_to(ROOT)))
     (ROOT/'publication').mkdir(exist_ok=True)
     write_json(ROOT/'publication/PUBLIC_ARTIFACT_AUDIT.json',audit)
     with (ROOT/'results/COST_LEDGER.jsonl').open('w') as f:
@@ -79,6 +85,16 @@ def prepare(book):
         'gpu_seconds':0,'includes_failed_jobs':True,'includes_report_jobs':True,
         'publication_cost_receipt':'GitHub Release assets; separately charged to B0',
         'deployment_claim':'NOT_ESTABLISHED'})
+    failure_rows=[]
+    raw_failures=ROOT/'results/b0/FAILURE_LEDGER.jsonl'
+    if raw_failures.exists():
+        failure_rows=[{'kind':'IMPLEMENTATION_OR_OPTIMIZATION_FAILURE',**json.loads(line)}
+                      for line in raw_failures.read_text().splitlines() if line.strip()]
+    gate=json.loads((ROOT/'results/b0/GATE_DECISION.json').read_text())
+    failure_rows.extend({'kind':'FROZEN_GATE2_TASK_COUNTEREXAMPLE',**row}
+                       for row in gate['G2'].get('observed_task_counterexamples',[]))
+    with (ROOT/'results/FAILURE_LEDGER.jsonl').open('w') as f:
+        for row in failure_rows:f.write(json.dumps(row,allow_nan=False)+'\n')
     with book.span('archive_release_cost_assets'):
         bundle=ROOT/'publication/A24_COMPLETE_COST_LEDGERS.zip'
         with zipfile.ZipFile(bundle,'w',compression=zipfile.ZIP_STORED) as z:

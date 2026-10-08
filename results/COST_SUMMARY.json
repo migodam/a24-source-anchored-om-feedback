@@ -1,0 +1,15 @@
+{
+  "jobs": 9,
+  "wall_by_stage": {
+    "A": 3.2133829170488752,
+    "B0": 56.740527250018204,
+    "3D": 0
+  },
+  "process_cpu_seconds": 56.840854,
+  "new_clean_labels": 16,
+  "gpu_seconds": 0,
+  "includes_failed_jobs": true,
+  "includes_report_jobs": true,
+  "publication_cost_receipt": "GitHub Release assets; separately charged to B0",
+  "deployment_claim": "NOT_ESTABLISHED"
+}

@@ -1,0 +1,14 @@
+{
+  "command": "report",
+  "job": "a24-report-003",
+  "source_commit": "6d597a34ada767a0c473447e4825dabbebd41655",
+  "python": "3.13.13",
+  "device": "cpu",
+  "argv": [
+    "./src/a24/cli.py",
+    "report",
+    "--job",
+    "a24-report-003"
+  ],
+  "protocol_id": "A24-NO-NN-20261008-v1"
+}

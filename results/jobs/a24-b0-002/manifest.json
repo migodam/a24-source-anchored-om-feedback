@@ -1,0 +1,14 @@
+{
+  "command": "no-nn",
+  "job": "a24-b0-002",
+  "source_commit": "84b7f73fcb4a52e4edb9a23f55da9a1cc5e38d11",
+  "python": "3.13.13",
+  "device": "cpu",
+  "argv": [
+    "./src/a24/cli.py",
+    "no-nn",
+    "--job",
+    "a24-b0-002"
+  ],
+  "protocol_id": "A24-NO-NN-20261008-v1"
+}

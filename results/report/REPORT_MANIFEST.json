@@ -1,0 +1,90 @@
+{
+  "protocol_id": "A24-NO-NN-20261008-v1",
+  "generated_utc": "2026-10-08T12:45:29.558483+00:00",
+  "status": "CODEX_SCIENTIFIC_REVIEW_COMPLETE",
+  "scientific_review": "docs/SCIENTIFIC_REVIEW.md",
+  "gate_decision": "CURRENT_COMPRESSED_FEEDBACK_NO_GO",
+  "gate_statuses": {
+    "G1": "PASS",
+    "G2": "FAIL",
+    "G3": "HOLD",
+    "G4": "NOT_RUN_TRAINING_DISABLED",
+    "G5": "QUALITY_TARGET_NOT_REACHED"
+  },
+  "condition_statuses": {
+    "OK": 136,
+    "FAILED": 4,
+    "COMMON_INITIALIZATION_FAILED": 84
+  },
+  "gate_thresholds_changed": false,
+  "physics_actions": 0,
+  "new_labels": 0,
+  "plots_scope": "descriptive scientific figures from recorded evaluator outputs",
+  "reuse_timing_scope": "measured components; N repeated deployments NOT_RUN",
+  "read_failures": [],
+  "figures": [
+    {
+      "name": "anatomy_task_errors_and_rank",
+      "png": "./results/report/figures/anatomy_task_errors_and_rank.png",
+      "pdf": "./results/report/figures/anatomy_task_errors_and_rank.pdf"
+    },
+    {
+      "name": "parent_metrics_complete_only",
+      "png": "./results/report/figures/parent_metrics_complete_only.png",
+      "pdf": "./results/report/figures/parent_metrics_complete_only.pdf"
+    },
+    {
+      "name": "descriptive_background_conditions",
+      "png": "./results/report/figures/descriptive_background_conditions.png",
+      "pdf": "./results/report/figures/descriptive_background_conditions.pdf"
+    },
+    {
+      "name": "closure_and_independent_tasks",
+      "png": "./results/report/figures/closure_and_independent_tasks.png",
+      "pdf": "./results/report/figures/closure_and_independent_tasks.pdf"
+    },
+    {
+      "name": "runtime_reuse_accounting",
+      "png": "./results/report/figures/runtime_reuse_accounting.png",
+      "pdf": "./results/report/figures/runtime_reuse_accounting.pdf"
+    },
+    {
+      "name": "image_weak_2401_1.2_snr20",
+      "png": "./results/report/figures/image_weak_2401_1.2_snr20.png",
+      "pdf": "./results/report/figures/image_weak_2401_1.2_snr20.pdf"
+    },
+    {
+      "name": "image_weak_2403_1.2_snr20",
+      "png": "./results/report/figures/image_weak_2403_1.2_snr20.png",
+      "pdf": "./results/report/figures/image_weak_2403_1.2_snr20.pdf"
+    },
+    {
+      "name": "image_ring_2401_1.2_snr20",
+      "png": "./results/report/figures/image_ring_2401_1.2_snr20.png",
+      "pdf": "./results/report/figures/image_ring_2401_1.2_snr20.pdf"
+    },
+    {
+      "name": "image_ring_2403_1.2_snr20",
+      "png": "./results/report/figures/image_ring_2403_1.2_snr20.png",
+      "pdf": "./results/report/figures/image_ring_2403_1.2_snr20.pdf"
+    }
+  ],
+  "plot_data_csvs": [
+    "condition_plot_data",
+    "condition_raw_records",
+    "condition_failures",
+    "parent_metrics",
+    "task_plot_data",
+    "timing_raw",
+    "paired_background_parent_description",
+    "weak_equal_parent_description",
+    "R16_same_estimate_task_ranges",
+    "runtime_N1_N10_N100",
+    "preparation_raw",
+    "failure_ledger",
+    "job_costs",
+    "confirmation3d_conditions",
+    "anatomy_plot_data"
+  ],
+  "elapsed_seconds_before_final_export": 4.172813374985708
+}

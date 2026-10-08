@@ -1,0 +1,31 @@
+{
+  "private_credentials_found": false,
+  "path_redacted_files": [
+    "results/anatomy/anatomy.json",
+    "results/report/REPORT_MANIFEST.json",
+    "results/jobs/a24-report-gates-001/manifest.json",
+    "results/jobs/a24-freeze-001/manifest.json",
+    "results/jobs/a24-report-003/result.json",
+    "results/jobs/a24-report-003/job_receipt.json",
+    "results/jobs/a24-report-003/manifest.json",
+    "results/jobs/a24-a-002/result.json",
+    "results/jobs/a24-a-002/job_receipt.json",
+    "results/jobs/a24-a-002/manifest.json",
+    "results/jobs/a24-b0-001/ERROR.log",
+    "results/jobs/a24-b0-001/manifest.json",
+    "results/jobs/a24-a-003/result.json",
+    "results/jobs/a24-a-003/job_receipt.json",
+    "results/jobs/a24-a-003/manifest.json",
+    "results/jobs/a24-report-002/result.json",
+    "results/jobs/a24-report-002/job_receipt.json",
+    "results/jobs/a24-report-002/manifest.json",
+    "results/jobs/a24-a-001/result.json",
+    "results/jobs/a24-a-001/job_receipt.json",
+    "results/jobs/a24-a-001/manifest.json",
+    "results/jobs/a24-b0-002/manifest.json"
+  ],
+  "sha256_checks_performed": false,
+  "scientific_values_modified": false,
+  "physics_actions": 0,
+  "cost_archives": "results/archive/"
+}

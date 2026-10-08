@@ -645,5 +645,5 @@ def anatomy(config, out, book=None):
                  'reason': 'durable epilogue; inclusive ledger elapsed includes I/O'})
     result['vectors_path'] = str((out/'anatomy_vectors.npz').resolve())
     result['ledger'] = book.receipt()
-    write_json(out/'anatomy.json', result)
+    write_json(out/'ANATOMY.json', result)
     return plain(result)

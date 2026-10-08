@@ -1,0 +1,75 @@
+{
+  "scope": "finite-dimensional algebra only; no Maxwell imaging or training",
+  "seed": 241008,
+  "anchor": {
+    "P_relative_norm": 4.171217719224611e-16,
+    "material_excitation_complement_norm": 4.610331298081482,
+    "feedback_complement_norm": 0.4602801251443483,
+    "inverse_schur_error": 3.9321422455693333e-16,
+    "retained_rank": 5
+  },
+  "retained_coupling": {
+    "identity_error": 5.245285617289986e-16,
+    "omitting_coupling_error": 0.04036380670313288
+  },
+  "relative_identity": {
+    "current_form_error": 1.4363575521106182e-15,
+    "source_form_error": 1.4187314454860417e-15
+  },
+  "propagation_error": {
+    "q_error": 0.008551794502756895,
+    "q_bound": 0.008921352472920028,
+    "data_error": 0.0038777296769057033,
+    "data_bound": 0.010906176388922429,
+    "state_residual_identity_error": 8.858596817474015e-14
+  },
+  "real_adjoint_error": 4.296494009038337e-16,
+  "full_source_small_feedback": {
+    "small_core_relative_error": 3.654727580588031e-16,
+    "fixed_rank_current_projection_error": 0.9322209737745385,
+    "feedback_rank": 2,
+    "source_dimension": 12,
+    "warning": "structured synthetic operator, not a Maxwell performance experiment"
+  },
+  "tsom_geometry": {
+    "intersection_rank": 1,
+    "projection_rank": 2,
+    "claimed_three_space_sum_rank": 2,
+    "ambient_rank": 3,
+    "commutator_norm": 0.7071067811865474
+  },
+  "nonnormal": {
+    "spectral_radius": 0.0,
+    "degree0_absolute_error": 100.0,
+    "degree1_absolute_error": 0.0
+  },
+  "common_material": {
+    "fitted_a": 1.5,
+    "remaining_residual": 0.7071067811865476
+  },
+  "arbitrary_closure_counterexample": {
+    "true_defect": 0.5,
+    "incorrect_double_sided": 0.25
+  },
+  "singular_projected_core": {
+    "full_determinant": -1.0,
+    "projected_core": 0.0
+  },
+  "small_seed_large_output": {
+    "seed_norm": 1e-06,
+    "data_response": 1000000.0
+  },
+  "corrected_dwr_identity_error": 3.1037939727439553e-16,
+  "absolute_relative_toy": {
+    "absolute_born_factor": 1.2106609764917675,
+    "relative_feedback_factor": 0.049029033784545976,
+    "warning": "scalar algebra only; not a passive Maxwell resonance certificate"
+  },
+  "status": "ALL_ASSERTIONS_PASSED",
+  "elapsed_cpu_wall_seconds": 0.014400749991182238,
+  "environment": {
+    "python": "3.13.13",
+    "numpy": "2.5.3",
+    "gpu_used": false
+  }
+}
