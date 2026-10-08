@@ -138,7 +138,15 @@ def run_pilot(config,out,book):
     out=Path(out);out.mkdir(parents=True,exist_ok=True)
     for directory in ['data/online','data/offline','images','timing','cache']:
         (out/directory).mkdir(parents=True,exist_ok=True)
-    rows=[];tasks=[];preparations=[];timing=[];failures=out/'FAILURE_LEDGER.jsonl'
+    # Resume only unrecorded fixed conditions. Failed rows remain failed;
+    # cached offline labels never become proposal inputs or new free labels.
+    def saved_rows(name):
+        path=out/name
+        if not path.exists(): return []
+        with path.open(newline='',encoding='utf-8') as f: return list(csv.DictReader(f))
+    rows=saved_rows('CASES.csv');tasks=saved_rows('TASK_AUDIT.csv')
+    preparations=saved_rows('PREPARATION.csv');timing=saved_rows('TIMING.csv')
+    failures=out/'FAILURE_LEDGER.jsonl'
     runtime=online_config(config)
     phys=Physics2D(grid=config['grid'],book=book,config=runtime)
     for bi,(bgname,bg) in enumerate(backgrounds(phys.points,config).items()):
@@ -178,26 +186,52 @@ def run_pilot(config,out,book):
         phys._evaluation_yb=cache.yb
         for pi,parent in enumerate(config['parents']):
             for ai,amplitude in enumerate(config['amplitudes']):
-                book.reserve('new_clean_labels',config['clean_labels_max'])
-                truth=bg+amplitude*material_pattern(phys.points,parent,config)
-                with book.scope('offline_clean_label'):
-                    truth_state=phys.full_state(truth)
-                np.savez_compressed(out/'data/offline'/f'{bgname}_{parent}_{amplitude}.npz',
-                                    truth=truth,clean=truth_state.data)
+                label_path=out/'data/offline'/f'{bgname}_{parent}_{amplitude}.npz'
+                if label_path.exists():
+                    with book.span('offline_frozen_label_cache_read'):
+                        with np.load(label_path,allow_pickle=False) as stored:
+                            truth=stored['truth'].copy();clean=stored['clean'].copy()
+                else:
+                    book.reserve('new_clean_labels',config['clean_labels_max'])
+                    truth=bg+amplitude*material_pattern(phys.points,parent,config)
+                    with book.scope('offline_clean_label'):
+                        clean=phys.full_state(truth).data
+                    np.savez_compressed(label_path,truth=truth,clean=clean)
                 for ni,noise_db in enumerate(config['noise_snr_db']):
                     case=f'{bgname}_{parent}_{amplitude}_{"zero" if noise_db is None else "snr20"}'
+                    existing={r['method'] for r in rows if r['case_id']==case}
+                    if existing==set(config['methods']): continue
                     rng=np.random.default_rng(np.random.SeedSequence([config['master_seed'],bi,parent,ai,ni,701]))
-                    measured,sigma,noise=noisy_observation(truth_state.data,cache.yb,noise_db,rng)
+                    measured,sigma,noise=noisy_observation(clean,cache.yb,noise_db,rng)
                     obs=OnlineObservation(measured,sigma,case)
                     np.savez_compressed(out/'data/online'/f'{case}.npz',data=measured,sigma=sigma,
                                         chi_b=bg,case_id=case,noise_seed=[config['master_seed'],bi,parent,ai,ni,701])
                     init_start=time.perf_counter()
-                    with book.scope('online_shared_initialization'):
-                        x0,lam,initmeta=common_initialization(cache,obs,prep,runtime,book)
+                    try:
+                        with book.scope('online_shared_initialization'):
+                            x0,lam,initmeta=common_initialization(cache,obs,prep,runtime,book)
+                    except BudgetExceeded: raise
+                    except Exception as exc:
+                        append_failure(failures,phase='common_initialization',case_id=case,
+                                       error=repr(exc),prox_diagnostics=getattr(exc,'meta',None))
+                        for method in config['methods']:
+                            if method in existing: continue
+                            rows.append({'case_id':case,'parent_id':parent,'family':config['parent_families'][pi],
+                                'background':bgname,'amplitude':amplitude,'noise_db':noise_db,'sigma':sigma,
+                                'method':method,'status':'COMMON_INITIALIZATION_FAILED','error':repr(exc),
+                                'material_nrmse':None,'delta_nrmse':None,'feasible':False})
+                        if ai==0 and ni==1 and pi in (0,2):
+                            for repeat in range(config['timing_repeats']):
+                                for method in ['L','F','R16']:
+                                    timing.append({'case_id':case,'parent_id':parent,'background':bgname,
+                                        'method':method,'repeat':repeat,'status':'NOT_RUN_INITIALIZATION_FAILED'})
+                        write_csv(out/'CASES.csv',rows);write_csv(out/'TIMING.csv',timing)
+                        continue
                     init_s=time.perf_counter()-init_start
                     case_results={}
                     order=list(config['methods']);rotate=(pi+ai+ni+bi)%len(order);order=order[rotate:]+order[:rotate]
                     for method in order:
+                        if method in existing: continue
                         row={'case_id':case,'parent_id':parent,'family':config['parent_families'][pi],
                              'background':bgname,'amplitude':amplitude,'noise_db':noise_db,'sigma':sigma,
                              'method':method,'status':'NOT_RUN','material_nrmse':None,'delta_nrmse':None,
@@ -214,7 +248,7 @@ def run_pilot(config,out,book):
                             with book.scope('offline_full_validation'):
                                 reused=(method=='F' and 'native' in got['state'].extra)
                                 physical=got['state'].extra['native'] if reused else phys.full_state(got['chi'])
-                                metrics=evaluate_image(phys,truth,got['chi'],bg,physical,obs,truth_state.data,config)
+                                metrics=evaluate_image(phys,truth,got['chi'],bg,physical,obs,clean,config)
                                 fstate=physical;lstate=linear.forward(got['chi'])
                                 feedback=la.norm(fstate.data-lstate.data)
                                 closure=la.norm(got['state'].data-fstate.data)
@@ -244,7 +278,8 @@ def run_pilot(config,out,book):
                         except BudgetExceeded: raise
                         except Exception as exc:
                             row.update(status='FAILED',error=repr(exc))
-                            append_failure(failures,phase='online_or_evaluation',case_id=case,method=method,error=repr(exc))
+                            append_failure(failures,phase='online_or_evaluation',case_id=case,method=method,
+                                           error=repr(exc),prox_diagnostics=getattr(exc,'meta',None))
                         rows.append(row)
                         write_csv(out/'CASES.csv',rows)
                     # Independent primal/dual audit: SAME legal R estimate, no teacher.
