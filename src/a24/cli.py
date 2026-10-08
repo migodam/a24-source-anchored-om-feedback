@@ -7,8 +7,17 @@ from .contracts import Ledger,active_ledger
 
 ROOT=Path(__file__).resolve().parents[2]
 
-def history(stage):
+def history(stage,ignore_job=None):
     receipts=[]
+    # An interrupted controller cannot grant a fresh budget or fresh labels.
+    # Unknown elapsed work requires an explicit recovery audit, never zero.
+    for manifest in sorted((ROOT/'results/jobs').glob('*/manifest.json')):
+        if manifest.parent.name==ignore_job: continue
+        d=json.loads(manifest.read_text());command=d.get('command')
+        if command=='freeze': continue
+        previous_stage='A' if command=='anatomy' else '3D' if command=='confirm-3d' else 'B0'
+        if previous_stage==stage and not (manifest.parent/'job_receipt.json').exists():
+            raise BudgetExceeded('UNRESOLVED_PREVIOUS_JOB_RECEIPT:'+manifest.parent.name)
     for p in sorted((ROOT/'results/jobs').glob('*/job_receipt.json')):
         d=json.loads(p.read_text())
         if d['stage']==stage:receipts.append(d)
@@ -33,7 +42,7 @@ def main(argv=None):
         print(json.dumps({'status':'FROZEN','source_commit':head,'job':args.job}));return
     stage='A' if args.command=='anatomy' else '3D' if args.command=='confirm-3d' else 'B0'
     limits={'A':config['A_wall_seconds'],'B0':config['B0_wall_seconds'],'3D':config['confirmation_wall_seconds']}
-    prior,labels=history(stage)
+    prior,labels=history(stage,ignore_job=args.job)
     book=Ledger(job/'COST_LEDGER.jsonl',wall_limit=limits[stage],prior_wall=prior,metadata={'job':args.job,'stage':stage})
     book.reservations['new_clean_labels']=labels
     result={'status':'FAILED'};original=signal.signal(signal.SIGALRM,alarm_handler)
@@ -75,6 +84,10 @@ def main(argv=None):
             else:
                 from .gates import decide
                 result=decide(config,ROOT/'results/b0',ROOT/'results/anatomy/ANATOMY.json')
+                from .reporting import build_report
+                with book.span('report_tables_and_scientific_figures'):
+                    deliverables=build_report(config,ROOT,book)
+                result['report_artifacts']=deliverables
     except BaseException as exc:
         result={'status':'BUDGET_STOP' if isinstance(exc,BudgetExceeded) else 'FAILED','error':repr(exc)}
         (job/'ERROR.log').write_text(traceback.format_exc())

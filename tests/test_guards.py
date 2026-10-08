@@ -1,5 +1,6 @@
 from __future__ import annotations
-import tempfile,time,unittest
+import tempfile,time,unittest,json
+from unittest.mock import patch
 from pathlib import Path
 import numpy as np
 from a24.contracts import (OnlineObservation, ForbiddenAccess, online_config,
@@ -7,6 +8,22 @@ from a24.contracts import (OnlineObservation, ForbiddenAccess, online_config,
 from a20.costs import BudgetExceeded
 
 class GuardTests(unittest.TestCase):
+    def test_unfinalized_job_cannot_reset_budget(self):
+        from a24 import cli
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d);job=root/'results/jobs/interrupted';job.mkdir(parents=True)
+            (job/'manifest.json').write_text(json.dumps({'command':'no-nn'}))
+            with patch.object(cli,'ROOT',root):
+                with self.assertRaises(BudgetExceeded):cli.history('B0')
+                self.assertEqual(cli.history('A'),(0,0))
+    def test_budget_history_counts_failed_jobs_and_labels(self):
+        from a24 import cli
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d);job=root/'results/jobs/failed';job.mkdir(parents=True)
+            (job/'manifest.json').write_text(json.dumps({'command':'no-nn'}))
+            (job/'job_receipt.json').write_text(json.dumps({'stage':'B0','wall_seconds':2.5,
+                    'new_clean_labels':3,'result':{'status':'FAILED'}}))
+            with patch.object(cli,'ROOT',root):self.assertEqual(cli.history('B0'),(2.5,3))
     def test_runtime_config_removes_test_geometry(self):
         out=online_config({'parent_masks':{'secret':1},'truth':1,'grid':8,'master_seed':241008})
         self.assertEqual(out,{'grid':8,'master_seed':241008})
